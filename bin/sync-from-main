@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# 本体（非公開）から、公開している抜粋を写し直す。
+#
+#   bin/sync-from-main [本体のパス] [取り込む ref]
+#   既定: ../image-palace origin/main
+#
+# **作業ツリーではなく、コミットされた内容（既定は origin/main）から取る。**
+# 手元で試しているだけの変更を、うっかり公開しないため。
+#
+# 写すだけで、コミットはしない。**差分を読むのは人の仕事**——
+# 本体に足したコメントや定数が、公開して差し支えないかは機械では決まらない。
+set -euo pipefail
+
+SRC="${1:-../image-palace}"
+REF="${2:-origin/main}"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+MANIFEST="$ROOT/bin/synced-files.txt"
+
+cd "$SRC" || { echo "本体が見つかりません: $SRC" >&2; exit 1; }
+SRC_ABS="$(pwd)"
+git rev-parse --verify --quiet "$REF" >/dev/null || { echo "ref がありません: $REF" >&2; exit 1; }
+git fetch --quiet origin 2>/dev/null || true
+
+copied=0
+missing=()
+while IFS= read -r path; do
+  [ -z "$path" ] && continue
+  case "$path" in \#*) continue ;; esac
+
+  if ! git cat-file -e "$REF:$path" 2>/dev/null; then
+    missing+=("$path")
+    continue
+  fi
+  mkdir -p "$ROOT/$(dirname "$path")"
+  git show "$REF:$path" > "$ROOT/$path"
+  copied=$((copied + 1))
+done < "$MANIFEST"
+
+echo "写した: ${copied} ファイル（$SRC_ABS の $REF から）"
+
+if [ ${#missing[@]} -gt 0 ]; then
+  echo
+  echo "本体に無くなっているもの（移動・改名・削除）:"
+  printf '  %s\n' "${missing[@]}"
+  echo "  --> bin/synced-files.txt を直すか、この公開版から外すか決めてください"
+fi
+
+# 鍵・個人情報の走査。**公開前に必ず通る**ようにここへ置いている
+echo
+cd "$ROOT"
+patterns='sk-[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{30,}|-----BEGIN [A-Z ]*PRIVATE KEY|xox[baprs]-|AIza[0-9A-Za-z_-]{30,}|whsec_[A-Za-z0-9]{20,}|(sk|rk)_live_[A-Za-z0-9]{12,}|postgres(ql)?://[^[:space:]:@]+:[^[:space:]@]+@|https://[0-9a-f]{16,}@'
+if grep -rIlE "$patterns" backend frontend docs 2>/dev/null; then
+  echo "鍵らしき値が入っています。**公開しないでください。**" >&2
+  exit 2
+fi
+mails="$(grep -rIhoE '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}' backend frontend docs 2>/dev/null | sort -u || true)"
+if [ -n "$mails" ]; then
+  echo "メールアドレスが入っています。意図したものか確かめてください:" >&2
+  echo "$mails" >&2
+fi
+echo "走査: 鍵は見つかりませんでした"
+
+echo
+echo "次にすること"
+echo "  1. git diff          <-- **公開して差し支えない差分か**を読む（ここが本番）"
+echo "  2. docs/code-tour.md・docs/engineering-notes.md を要るぶんだけ直す"
+echo "  3. git add -A && git commit && git push"

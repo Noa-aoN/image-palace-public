@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 脆弱性の報告
+    url: https://github.com/Noa-aoN/image-palace-public/security/advisories/new
+    about: 公開の issue ではなく、非公開でやり取りできるこちらからお願いします
+  - name: サービスについての問い合わせ
+    url: https://imagepalace.app
+    about: アプリの使い方・不具合は、サービス内のお問い合わせからどうぞ

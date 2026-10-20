@@ -1,6 +1,6 @@
 # コードの案内
 
-抜粋した 22 ファイルを、**読む価値のある順**に並べています。
+抜粋した 29 ファイルを、**読む価値のある順**に並べています。
 パスは本体（非公開リポジトリ）と同じです。抜粋なので、ここから呼ばれている
 クラスの多くはこのリポジトリにありません。読むのに困らない範囲で選びました。
 
@@ -59,7 +59,19 @@
 | [query_counting.rb](../backend/spec/support/query_counting.rb) | 速さは環境で変わるので測らず、**問い合わせの本数**だけを数える道具 |
 | [items_query_count_spec.rb](../backend/spec/requests/api/v1/items_query_count_spec.rb) | 「枚数を増やしても本数が増えない」を固定。サムネの添付を読み忘れていたときは 82 本・約 5.6 秒かかっていた |
 
-## 7. 中核のモデル
+## 7. フロントエンド
+
+| ファイル | 読みどころ |
+|---|---|
+| [api/client.ts](../frontend/src/lib/api/client.ts) | 通信の入口。**画像を送るときだけ既定の JSON を外す**（axios は `application/json` のまま `FormData` を渡されると JSON へ畳み、File が `{}` になる）。401 のときに「公開ページからは追い出さない」判断もここ |
+| [auth/token-sync.ts](../frontend/src/lib/auth/token-sync.ts) | 鍵はリクエストのたびに差し替わる。**タブを2つ開くと片方の鍵が古くなる**ので、送る前に保存されているほうを読み、すれ違ったら新しい鍵で1回だけやり直す |
+| [auth/public-paths.ts](../frontend/src/lib/auth/public-paths.ts) | ログイン無しで読めるページの一覧。**読みかけの記事からログイン画面へ飛ばさない**ために要る |
+| [billing/credit-cost.ts](../frontend/src/lib/billing/credit-cost.ts) | 「押してから消費量が分かる」を無くすための計算。合計だけでなく**内訳**を持つ理由（1枚作ると絵 1cr に加えて意味・タグなどが 0.01cr ずつかかる）、残高が読めないときに**止めない**理由 |
+| [card-create/parse-titles.ts](../frontend/src/lib/card-create/parse-titles.ts) | 入力を1枚ずつの言葉に切る。既定でカンマを区切りにしない理由（`1,000` が割れる）。**入口ごとに書かない**（2か所にあって、片方だけカンマで割っていた） |
+| [stores/items.ts](../frontend/src/stores/items.ts) | Zustand の共有状態。一覧が返すのは要約なので、**差し替えずに重ねる**（差し替えると詳細を開いたまま項目が消える） |
+| [api-client-multipart.test.ts](../frontend/test/lib/api-client-multipart.test.ts) | 上の1つ目を固定するテスト。**押しても何も起きない**種類の壊れ方だったので、通信せず「最後に何が送られるか」だけを見る |
+
+## 8. 中核のモデル
 
 | ファイル | 読みどころ |
 |---|---|

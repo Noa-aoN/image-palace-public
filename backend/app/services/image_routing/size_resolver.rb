@@ -19,8 +19,9 @@ module ImageRouting
     # 比によって余裕がばらつかないよう、長辺で揃える。
     DOWNSCALE_MARGIN = 1.28
 
-    # 保存長辺の既定（OptimizeImageService::MAX_DIMENSION と同じ）。
-    # ここを参照せずに定数を持つのは、解決だけを試すときに画像側を読み込ませないため
+    # **生成をどれだけ大きく作るかの基準。** 保存の長辺（Resolution::STORE_MAX_PX）
+    # とは別の数字で、こちらを上げると実際に作る画素が増える＝原価が上がる。
+    # 保存だけを 1088px に上げたときも、ここは動かしていない
     DEFAULT_SAVE_MAX_PX = 800
 
     # 既定の保存に対する生成の長辺の下限

@@ -65,11 +65,15 @@ class GenerateImageJob < ApplicationJob
           user_id: item.user_id, metadata: result.metadata
         )
         # 切り出す比は、実際に頼んだ実寸から決まる。
-        # 任意サイズを受けるモデルなら比ぴったりで返るので、ここは nil になる
+        # 任意サイズを受けるモデルなら比ぴったりで返るので、ここは nil になる。
+        #
+        # 保存の長辺は `save_dimension`（段が言わなければ作った実寸のまま）。
+        # `save_max_px` を素で渡していたころは、段が何も言っていないと 800px へ縮み、
+        # **作るのに払った画素を捨てていた**
         attach_image_data(
           shared_media, result.image_data, result.content_type,
           crop_ratio: result.resolution&.crop_ratio,
-          max_dimension: result.resolution&.save_max_px
+          max_dimension: result.resolution&.save_dimension
         )
         attach_from_shared_media(item, shared_media)
       end
